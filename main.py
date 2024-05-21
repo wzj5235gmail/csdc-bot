@@ -202,7 +202,7 @@ async def test():
 @app.post('/wechat')
 # async def chat_with_knowledge_base(request: Request, background_tasks: BackgroundTasks):
 async def chat_with_knowledge_base(request: Request):
-    return "success"
+    # return "success"
     user, me, message = await decode_message(request)
 
     # if message == "1":
