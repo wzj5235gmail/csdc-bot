@@ -87,28 +87,28 @@ retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k
 def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
 
-# template = """根据已知信息和对话历史，简洁和专业地回答问题。尽可能采用按数字编号的要点形式回答。答案中不要产生“\n”这样的字符。如果无法从中得到答案，请说 “抱歉，我的知识范围仅限中国结算深圳分公司公开发布的业务规则。请修改问题再试一次。”，不允许在答案中添加编造成分，答案请使用中文，字数不要超过150。
+template = """根据已知信息和对话历史，简洁和专业地回答问题。尽可能采用按数字编号的要点形式回答。答案中不要产生“\n”这样的字符。如果无法从中得到答案，请说 “抱歉，我的知识范围仅限中国结算深圳分公司公开发布的业务规则。请修改问题再试一次。”，不允许在答案中添加编造成分，答案请使用中文，字数不要超过150。
 
-# {context}
+{context}
 
-# 问题: {question}
+问题: {question}
 
-# """
+"""
 
-contextualize_q_system_prompt = """鉴于聊天历史记录和最新的用户问题，这个问题可能引用了聊天历史记录中的上下文，\
-请重新表述一个不需要聊天历史记录也能理解的独立问题。不要回答问题，只需在必要时重新表述问题，否则按原样返回问题。"""
+# contextualize_q_system_prompt = """鉴于聊天历史记录和最新的用户问题，这个问题可能引用了聊天历史记录中的上下文，\
+# 请重新表述一个不需要聊天历史记录也能理解的独立问题。不要回答问题，只需在必要时重新表述问题，否则按原样返回问题。"""
 
-contextualize_q_prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", contextualize_q_system_prompt),
-        MessagesPlaceholder("chat_history"),
-        ("human", "{input}"),
-    ]
-)
+# contextualize_q_prompt = ChatPromptTemplate.from_messages(
+#     [
+#         ("system", contextualize_q_system_prompt),
+#         MessagesPlaceholder("chat_history"),
+#         ("human", "{input}"),
+#     ]
+# )
 
-history_aware_retriever = create_history_aware_retriever(
-    chat, retriever, contextualize_q_prompt
-)
+# history_aware_retriever = create_history_aware_retriever(
+#     chat, retriever, contextualize_q_prompt
+# )
 
 # qa_system_prompt = """
 #     你是一个回答问题的助手。请使用以下检索到的上下文来回答问题。\
@@ -116,34 +116,36 @@ history_aware_retriever = create_history_aware_retriever(
 #     使用序号要点，并保持答案简洁，不超过100字。\
 #     如果答案超过150字，可以分割，但必须提示用户输入“继续”来获取下文。 \
 #     {context}"""
-qa_system_prompt = """
-    你是一个回答问题的助手。请使用以下检索到的上下文来回答问题。\
-    如果你不知道答案，就直接说你不知道。\
-    不要回答与上下文无关的问题。\
-    使用序号要点，并保持答案简洁。 \
-    在答案的最后，将信息源的相关原文的节选按序号要点列出。 \
-    {context}"""
-qa_prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", qa_system_prompt),
-        MessagesPlaceholder("chat_history"),
-        ("human", "{input}"),
-    ]
-)
 
+# qa_system_prompt = """
+#     你是一个回答问题的助手。请使用以下检索到的上下文来回答问题。\
+#     如果你不知道答案，就直接说你不知道。\
+#     不要回答与上下文无关的问题。\
+#     使用序号要点，并保持答案简洁。 \
+#     在答案的最后，将信息源的相关原文的节选按序号要点列出。 \
+#     {context}"""
 
-question_answer_chain = create_stuff_documents_chain(chat, qa_prompt)
-
-rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
-
-# custom_rag_prompt = PromptTemplate.from_template(template)
-
-# rag_chain = (
-    # {"context": retriever | format_docs, "question": RunnablePassthrough()}
-    # | custom_rag_prompt
-    # | chat
-    # | StrOutputParser()
+# qa_prompt = ChatPromptTemplate.from_messages(
+#     [
+#         ("system", qa_system_prompt),
+#         MessagesPlaceholder("chat_history"),
+#         ("human", "{input}"),
+#     ]
 # )
+
+
+# question_answer_chain = create_stuff_documents_chain(chat, qa_prompt)
+
+# rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
+
+custom_rag_prompt = PromptTemplate.from_template(template)
+
+rag_chain = (
+    {"context": retriever | format_docs, "question": RunnablePassthrough()}
+    | custom_rag_prompt
+    | chat
+    | StrOutputParser()
+)
 
 
 # def get_access_token():
@@ -218,19 +220,22 @@ async def chat_with_knowledge_base(request: Request):
     #         user_prev_answer[user] = reply
     #         return Response(content=xml_format(user, me, reply), media_type="application/xml")
     # 检查消息是否重复
-    if user in user_last_messages and message == user_last_messages[user]:
-        return xml_format(user, me, "已超时，请重试")
-    user_last_messages[user] = message
+    # if user in user_last_messages and message == user_last_messages[user]:
+    #     return xml_format(user, me, "已超时，请重试")
+    # user_last_messages[user] = message
 
-    if user not in chat_histories:
-        chat_histories[user] = []
+    # if user not in chat_histories:
+    #     chat_histories[user] = []
 
-    user_chat_history = chat_histories[user]
-    # reply = rag_chain.invoke(message)
-    ai_reply = rag_chain.invoke({"input": message, "chat_history": user_chat_history})
-    answer = ai_reply["answer"]
-    user_chat_history.extend([HumanMessage(content=message), answer])
-    return Response(content=xml_format(user, me, ai_reply["answer"]), media_type="application/xml")
+    # user_chat_history = chat_histories[user]
+    # # reply = rag_chain.invoke(message)
+    # print(user_chat_history)
+    # ai_reply = rag_chain.invoke({"input": message, "chat_history": user_chat_history})
+    ai_reply = rag_chain.invoke(message)
+    # answer = ai_reply["answer"]
+    # user_chat_history.extend([HumanMessage(content=message), answer])
+    # return Response(content=xml_format(user, me, answer), media_type="application/xml")
+    return Response(content=xml_format(user, me, ai_reply), media_type="application/xml")
     # background_tasks.add_task(get_reply, user, message)
     # return Response(content=xml_format(user, me, "飞速思考中，请等待5秒后回复数字“1”获取回答"), media_type="application/xml")
 
