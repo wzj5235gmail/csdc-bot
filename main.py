@@ -87,7 +87,10 @@ retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k
 def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
 
-template = """根据已知信息和对话历史，简洁和专业地回答问题。尽可能采用按数字编号的要点形式回答。答案中不要产生“\n”这样的字符。如果无法从中得到答案，请说 “抱歉，我的知识范围仅限中国结算深圳分公司公开发布的业务规则。请修改问题再试一次。”，不允许在答案中添加编造成分，答案请使用中文，字数不要超过150。
+template = """根据已知信息和对话历史，简洁和专业地回答问题。
+尽可能采用按数字编号的要点形式回答。
+如果无法从已知信息中得到答案，请说 “抱歉，我的知识范围仅限中国结算深圳分公司公开发布的业务规则。请修改问题再试一次。”。
+不允许在答案中添加编造成分。
 
 {context}
 
