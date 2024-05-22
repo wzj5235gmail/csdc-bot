@@ -32,7 +32,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-MAX_MSG_IN_HISTORY = os.getenv("MAX_MSG_IN_HISTORY")
+MAX_MSG_IN_HISTORY = int(os.getenv("MAX_MSG_IN_HISTORY"))
 TOKEN = os.getenv("WECHAT_TOKEN")
 
 # chat = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.2, max_tokens=MAX_TOKENS)
