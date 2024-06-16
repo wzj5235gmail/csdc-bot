@@ -114,4 +114,3 @@ async def chat_with_knowledge_base(request: Request):
             chat_histories[user] = ChatMessageHistory()
     ai_reply = conversational_rag_chain.invoke({"input": message}, {'configurable': {'session_id': user}})
     return Response(content=xml_format(user, me, ai_reply['answer']), media_type="application/xml")
-
