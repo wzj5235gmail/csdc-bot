@@ -4,7 +4,7 @@ import os
 from lxml import etree
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from langchain.memory import ChatMessageHistory
+from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
@@ -31,6 +31,7 @@ TOKEN = os.getenv("WECHAT_TOKEN")
 chat_histories = {}
 
 def create_chain():
+    # llm = QianfanLLMEndpoint(model="ERNIE-4.0-8K-Preview",)
     llm = QianfanLLMEndpoint()
     # llm = Tongyi(model_name="qwen-turbo")
     # llm = BaichuanLLM()
@@ -53,10 +54,11 @@ def create_chain():
     qa_system_prompt = """
         你是一个回答中国结算深圳分公司业务指南相关问题的助手。\
         请使用以下检索到的上下文来回答问题。\
-        如果你不知道答案，或者遇到与上下文无关的问题，就直接说“根据已知内容无法回答，请修改问题。”。\
-        如果问题范围模糊，难以回答，不要随便回答，要求用户澄清问题。\
-        使用序号要点，并保持答案简洁，字数不要超过100字。\
         {context}"""
+        # 如果你不知道答案，或者遇到与上下文无关的问题，就直接说“根据已知内容无法回答，请修改问题。”。\
+        # 如果问题范围模糊，难以回答，不要随便回答，要求用户澄清问题。\
+        # 使用序号要点，并保持答案简洁。\
+        # 回答字数不要超过50字。\
     qa_prompt = ChatPromptTemplate.from_messages(
         [
             ("system", qa_system_prompt),
@@ -114,3 +116,7 @@ async def chat_with_knowledge_base(request: Request):
             chat_histories[user] = ChatMessageHistory()
     ai_reply = conversational_rag_chain.invoke({"input": message}, {'configurable': {'session_id': user}})
     return Response(content=xml_format(user, me, ai_reply['answer']), media_type="application/xml")
+
+if __name__ == '__main__':
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
